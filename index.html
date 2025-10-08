@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mesh Chat Widget - Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .demo-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .description {
+            color: #7f8c8d;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+            line-height: 1.6;
+        }
+        
+        .code-example {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+        
+        .highlight {
+            background: #f39c12;
+            color: #2c3e50;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 30px 0;
+        }
+        
+        .feature-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #ecf0f1;
+            color: #2c3e50;
+        }
+        
+        .feature-list li:before {
+            content: '✓';
+            color: #27ae60;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .controls {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            background: #2c3e50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: #34495e;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1>🚀 Mesh Chat Widget</h1>
+        
+        <div class="description">
+            Dieses Chat-Widget zeigt live Nachrichten aus der Mesh Hessen Community an.
+            <span class="highlight">Einfach das JavaScript einbinden und fertig!</span>
+        </div>
+        
+        <h2>🎯 Features</h2>
+        <ul class="feature-list">
+            <li>Live-Nachrichten aus der Mesh Hessen API</li>
+            <li>Automatisches Laden und Aktualisieren von Nachrichten</li>
+            <li>Responsive Design für alle Geräte</li>
+            <li>Mesh Hessen Branding und Design</li>
+            <li>Minimieren/Maximieren Funktion</li>
+            <li>Scroll-to-Bottom Button bei neuen Nachrichten</li>
+            <li>Keine externen Abhängigkeiten</li>
+        </ul>
+        
+        <h2>💻 Verwendung</h2>
+        <div class="code-example">&lt;!-- Einfach diese Zeile in deine Webseite einfügen: --&gt;
+&lt;script src="mesh-chat-widget.js"&gt;&lt;/script&gt;
+
+&lt;!-- Optional: Konfiguration --&gt;
+&lt;script&gt;
+// Das Widget wird automatisch erstellt
+// Für eigene Konfiguration:
+window.meshChatWidget = new MeshChatWidget({
+    title: 'Mein Chat',
+    refreshInterval: 15000,  // 15 Sekunden
+    maxMessages: 30
+});
+&lt;/script&gt;</div>
+
+        <h2>⚙️ Konfiguration</h2>
+        <div class="code-example">// Alle verfügbaren Optionen:
+{
+    apiUrl: 'https://meshview.lsinfra.de/api/chat',  // API Endpunkt
+    refreshInterval: 30000,                          // Update-Intervall in ms
+    maxMessages: 50,                                 // Max. Anzahl Nachrichten
+    title: 'MESH HESSEN Chat'                       // Widget Titel
+}</div>
+
+        <div class="controls">
+            <button class="btn" onclick="window.meshChatWidget.show()">Widget Anzeigen</button>
+            <button class="btn" onclick="window.meshChatWidget.hide()">Widget Verstecken</button>
+            <button class="btn" onclick="window.meshChatWidget.loadMessages(true)">Nachrichten Aktualisieren</button>
+        </div>
+        
+        <div style="margin-top: 40px; text-align: center; color: #7f8c8d;">
+            <p>Das Chat-Widget erscheint unten rechts auf der Seite.</p>
+            <p>Es lädt live die neuesten Nachrichten direkt aus der Mesh Hessen API.</p>
+            <p><strong>🔥 Direkte API-Verbindung - plug and play!</strong></p>
+        </div>
+    </div>
+
+    <!-- Das Widget wird automatisch geladen -->
+    <script src="mesh-chat-widget.js"></script>
+</body>
+</html>
