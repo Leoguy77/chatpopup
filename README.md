@@ -2,10 +2,6 @@
 
 ## 🎯 Übersicht
 
-Das Mesh Chat Widget ist eine **einfache und saubere Lösung** zum Anzeigen von Live-Nachrichten aus der Mesh Hessen Community. Es benötigt nur eine einzige JavaScript-Datei!h Chat Widget - Standalone Version
-
-## 🎯 Übersicht
-
 Das Mesh Chat Widget ist eine **vollständig eigenständige Lösung** zum Anzeigen von Live-Nachrichten aus der Mesh Hessen Community. Es benötigt nur eine einzige JavaScript-Datei!
 
 ## 🚀 Schnellstart
