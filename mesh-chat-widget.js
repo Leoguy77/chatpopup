@@ -37,7 +37,7 @@
         }
 
         .mesh-chat-header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%);
+            background: linear-gradient(135deg, #2C2D3C 0%, #3D3E50 50%, #2C2D3C 100%);
             color: white;
             padding: 16px 20px;
             border-radius: 14px 14px 0 0;
@@ -54,7 +54,8 @@
             font-size: 18px;
             font-weight: 700;
             letter-spacing: 0.5px;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+            color: #ffffff;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
         }
 
         .mesh-chat-header h3::before {
@@ -86,9 +87,10 @@
         }
 
         .mesh-chat-controls button:hover {
-            background: rgba(255, 255, 255, 0.25);
+            background: #67EA94;
+            color: #2C2D3C;
             transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 2px 12px rgba(103, 234, 148, 0.4);
         }
 
         .mesh-chat-messages {
@@ -288,15 +290,15 @@
             position: absolute;
             bottom: 80px;
             right: 20px;
-            background: linear-gradient(135deg, #2c3e50, #34495e);
+            background: linear-gradient(135deg, #2C2D3C, #3D3E50);
             color: white;
-            border: 2px solid rgba(255, 255, 255, 0.2);
+            border: 2px solid #67EA94;
             padding: 10px 16px;
             border-radius: 25px;
             font-size: 12px;
             font-weight: 700;
             cursor: pointer;
-            box-shadow: 0 4px 16px rgba(44, 62, 80, 0.3);
+            box-shadow: 0 4px 16px rgba(103, 234, 148, 0.25);
             z-index: 10001;
             transition: all 0.3s ease;
             opacity: 0.95;
@@ -306,10 +308,11 @@
         }
 
         .mesh-scroll-to-bottom:hover {
-            background: linear-gradient(135deg, #34495e, #2c3e50);
+            background: linear-gradient(135deg, #3D3E50, #2C2D3C);
+            color: #67EA94;
             transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(44, 62, 80, 0.4);
-            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 6px 20px rgba(103, 234, 148, 0.4);
+            border-color: #67EA94;
         }
 
         /* Responsive Design */
