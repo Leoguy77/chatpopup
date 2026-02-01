@@ -373,9 +373,9 @@
     class MeshChatWidget {
         constructor(options = {}) {
             // Konfiguration mit Defaults
-            this.apiUrl = options.apiUrl || 'https://meshview.lsinfra.de/api/chat';
-            this.refreshInterval = options.refreshInterval || 30000;
-            this.maxMessages = options.maxMessages || 50;
+            this.apiUrl = options.apiUrl || 'https://meshview.lsinfra.de/api/packets';
+            this.refreshInterval = options.refreshInterval || 5000;
+            this.maxMessages = options.maxMessages || 100;
             this.title = options.title || 'MESH HESSEN Chat';
             
             // Interne Variablen
@@ -464,8 +464,22 @@
                     this.showLoading();
                 }
                 
-                let url = `${this.apiUrl}?limit=${this.maxMessages}`;
-                const response = await fetch(url, {
+                // Build URL mit Parametern
+                let baseUrl = this.apiUrl;
+                // Stelle sicher, dass eine absolute URL verwendet wird
+                if (!baseUrl.startsWith('http')) {
+                    baseUrl = window.location.origin + (baseUrl.startsWith('/') ? '' : '/') + baseUrl;
+                }
+                const url = new URL(baseUrl);
+                url.searchParams.set('portnum', '1');
+                url.searchParams.set('limit', this.maxMessages.toString());
+                
+                // Bei Updates: nur Nachrichten seit der letzten Aktualisierung abrufen
+                if (this.lastUpdateTime && !forceRefresh) {
+                    url.searchParams.set('since', this.lastUpdateTime);
+                }
+                
+                const response = await fetch(url.toString(), {
                     method: 'GET',
                     mode: 'cors',
                     cache: 'no-cache',
@@ -490,7 +504,11 @@
                         
                         if (newMessages.length > 0) {
                             this.messages = [...this.messages, ...newMessages];
-                            this.messages.sort((a, b) => new Date(b.import_time) - new Date(a.import_time));
+                            this.messages.sort((a, b) => {
+                                const timeA = (b.import_time_us || b.import_time);
+                                const timeB = (a.import_time_us || a.import_time);
+                                return timeA - timeB;
+                            });
                             this.messages = this.messages.slice(0, this.maxMessages);
                             this.addNewMessages(newMessages);
                         } else {
@@ -537,9 +555,21 @@
                 return;
             }
 
-            const sortedMessages = [...this.messages].sort((a, b) => 
-                new Date(a.import_time) - new Date(b.import_time)
+            // Filter Nachrichten mit gültigem Timestamp und ohne PKI-Channel
+            const validMessages = this.messages.filter(m => 
+                (m.import_time_us || m.import_time) && m.channel !== 'PKI'
             );
+            
+            if (validMessages.length === 0) {
+                this.messagesContainer.innerHTML = '<div class="mesh-loading">Keine Nachrichten verfügbar</div>';
+                return;
+            }
+
+            const sortedMessages = [...validMessages].sort((a, b) => {
+                const timeA = (a.import_time_us || a.import_time);
+                const timeB = (b.import_time_us || b.import_time);
+                return timeA - timeB;
+            });
 
             sortedMessages.forEach(message => {
                 const messageElement = this.createMessageElement(message);
@@ -564,9 +594,18 @@
             
             const wasScrolledToBottom = this.isScrolledToBottom();
             
-            const sortedNewMessages = [...newMessages].sort((a, b) => 
-                new Date(a.import_time) - new Date(b.import_time)
+            // Filter nur Nachrichten mit gültigem Timestamp und ohne PKI-Channel
+            const validNewMessages = newMessages.filter(m => 
+                (m.import_time_us || m.import_time) && m.channel !== 'PKI'
             );
+            
+            if (validNewMessages.length === 0) return;
+            
+            const sortedNewMessages = [...validNewMessages].sort((a, b) => {
+                const timeA = (a.import_time_us || a.import_time);
+                const timeB = (b.import_time_us || b.import_time);
+                return timeA - timeB;
+            });
 
             sortedNewMessages.forEach(message => {
                 const messageElement = this.createMessageElement(message);
@@ -589,8 +628,21 @@
                 messageDiv.classList.add('reply');
             }
 
-            const time = this.formatTime(message.import_time);
-            const sender = this.sanitizeText(message.long_name || 'Unbekannt');
+            // Prüfe import_time_us zuerst (Mikrosekunden), dann import_time
+            const timestamp = message.import_time_us || message.import_time;
+            const time = this.formatTime(timestamp);
+            
+            // Fallback für verschiedene Namenfelder
+            let sender = 'Unbekannt';
+            if (message.long_name && message.long_name.trim()) {
+                sender = message.long_name.trim();
+            } else if (message.from_id) {
+                sender = message.from_id;
+            } else if (message.from_node_id) {
+                sender = `Node ${message.from_node_id}`;
+            }
+            sender = this.sanitizeText(sender);
+            
             const content = this.sanitizeText(message.payload || '');
             const channel = this.formatChannel(message.channel);
 
@@ -610,10 +662,42 @@
 
         formatTime(timestamp) {
             try {
-                const date = new Date(timestamp);
+                if (!timestamp && timestamp !== 0) {
+                    return 'Unbekannt';
+                }
+                
+                let date;
+                
+                // Handle verschiedene Zeitformate
+                if (typeof timestamp === 'number') {
+                    // Prüfe ob es Mikrosekunden, Millisekunden oder Sekunden ist
+                    // Mikrosekunden sind > 10^12 (z.B. 1.7e12)
+                    if (timestamp > 10000000000000) {
+                        date = new Date(Math.floor(timestamp / 1000)); // Mikrosekunden zu Millisekunden
+                    }
+                    // Millisekunden sind 10^12 bis 10^13
+                    else if (timestamp > 100000000000) {
+                        date = new Date(timestamp); // Bereits Millisekunden
+                    }
+                    // Sekunden sind kleiner als 10^10 (z.B. 1.7e9 für 2024)
+                    else {
+                        date = new Date(timestamp * 1000); // Sekunden zu Millisekunden
+                    }
+                } else if (typeof timestamp === 'string') {
+                    date = new Date(timestamp);
+                } else {
+                    return 'Unbekannt';
+                }
+                
+                // Validiere die Date
+                if (isNaN(date.getTime())) {
+                    return 'Ungültige Zeit';
+                }
+                
                 const now = new Date();
                 const diffMinutes = Math.floor((now - date) / (1000 * 60));
                 
+                if (diffMinutes < 0) return 'Jetzt';
                 if (diffMinutes < 1) return 'Jetzt';
                 if (diffMinutes < 60) return `vor ${diffMinutes}m`;
                 if (diffMinutes < 1440) {
@@ -627,6 +711,7 @@
                     minute: '2-digit'
                 });
             } catch (error) {
+                console.error('Fehler beim Formatieren der Zeit:', error, timestamp);
                 return 'Unbekannt';
             }
         }
@@ -728,7 +813,8 @@
                 if (message) {
                     const timeElement = element.querySelector('.mesh-message-time');
                     if (timeElement) {
-                        timeElement.textContent = this.formatTime(message.import_time);
+                        const timestamp = message.import_time_us || message.import_time;
+                        timeElement.textContent = this.formatTime(timestamp);
                     }
                 }
             });
