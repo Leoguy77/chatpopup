@@ -14,7 +14,7 @@
             bottom: 20px;
             right: 20px;
             width: 350px;
-            height: 500px;
+            height: 580px;
             background: #ffffff;
             border: 2px solid #2c3e50;
             border-radius: 16px;
@@ -91,6 +91,34 @@
             color: #2C2D3C;
             transform: translateY(-1px);
             box-shadow: 0 2px 12px rgba(103, 234, 148, 0.4);
+        }
+
+        .mesh-chat-controls .mesh-minimize-wrap {
+            position: relative;
+            display: inline-flex;
+        }
+
+        .mesh-chat-new-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            background: #67EA94;
+            color: #2C2D3C;
+            font-size: 11px;
+            font-weight: 700;
+            border-radius: 10px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+            z-index: 1;
+        }
+
+        .mesh-chat-new-badge.visible {
+            display: flex;
         }
 
         .mesh-chat-messages {
@@ -315,54 +343,92 @@
             border-color: #67EA94;
         }
 
-        /* Responsive Design */
+        /* Responsive Design - compact floating card on mobile */
         @media (max-width: 768px) {
             .mesh-chat-widget {
-                width: calc(100vw - 40px);
-                height: 450px;
-                right: 20px;
-                left: 20px;
+                width: min(calc(100vw - 32px), 380px);
+                max-width: calc(100vw - 32px);
+                height: min(70vh, 520px);
+                max-height: 70vh;
+                bottom: max(16px, env(safe-area-inset-bottom));
+                left: 50%;
+                right: auto;
+                transform: translateX(-50%);
                 border-width: 2px;
+                border-radius: 16px;
+            }
+            
+            .mesh-chat-widget.minimized {
+                height: 56px;
+                width: min(calc(100vw - 32px), 320px);
             }
             
             .mesh-scroll-to-bottom {
-                bottom: 90px;
-                right: 30px;
+                bottom: 80px;
+                right: 16px;
             }
         }
 
         @media (max-width: 480px) {
             .mesh-chat-widget {
-                bottom: 0;
-                right: 0;
-                left: 0;
-                width: 100vw;
-                height: 65vh;
-                border-radius: 16px 16px 0 0;
-                border-bottom: none;
-                border-width: 2px 0 0 0;
+                width: calc(100vw - 24px);
+                max-width: none;
+                height: min(65vh, 460px);
+                max-height: 65vh;
+                bottom: max(12px, env(safe-area-inset-bottom));
+                left: 12px;
+                right: 12px;
+                transform: none;
+                border-radius: 16px;
+                border-width: 2px;
+            }
+            
+            .mesh-chat-widget.minimized {
+                height: 52px;
+                width: calc(100vw - 24px);
+                left: 12px;
             }
             
             .mesh-chat-header {
-                padding: 16px 20px;
-                border-radius: 16px 16px 0 0;
+                padding: 12px 16px;
+                border-radius: 14px 14px 0 0;
             }
             
             .mesh-chat-header h3 {
-                font-size: 16px;
+                font-size: 15px;
+            }
+            
+            .mesh-chat-messages {
+                padding: 12px 16px;
+            }
+            
+            .mesh-message {
+                padding: 12px;
             }
             
             .mesh-message-sender {
-                font-size: 14px;
+                font-size: 13px;
             }
             
             .mesh-message-content {
-                font-size: 14px;
+                font-size: 13px;
+            }
+            
+            .mesh-chat-footer {
+                padding: 10px 16px;
+                font-size: 11px;
+            }
+            
+            .mesh-chat-controls button {
+                width: 36px;
+                height: 36px;
+                min-width: 36px;
+                min-height: 36px;
             }
             
             .mesh-scroll-to-bottom {
-                bottom: 100px;
-                right: 20px;
+                bottom: 72px;
+                right: 12px;
                 padding: 8px 12px;
                 font-size: 11px;
             }
@@ -383,6 +449,8 @@
             this.isMinimized = false;
             this.isInitialLoad = true;
             this.lastUpdateTime = null;
+            this.lastSeenIds = new Set();   // message IDs when user last had widget open / minimized
+            this.newBadgeEl = null;
             
             // Widget initialisieren
             this.injectStyles();
@@ -390,6 +458,17 @@
             this.bindEvents();
             this.loadMessages();
             this.startAutoRefresh();
+            
+            // Auf Mobile standardmäßig minimiert starten
+            if (this.isMobile()) {
+                this.isMinimized = true;
+                this.widget.classList.add('minimized');
+                this.minimizeBtn.textContent = '+';
+            }
+        }
+
+        isMobile() {
+            return typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
         }
 
         injectStyles() {
@@ -407,7 +486,10 @@
                     <h3>${this.title}</h3>
                     <div class="mesh-chat-controls">
                         <button class="mesh-refresh-btn" title="Nachrichten aktualisieren">⟳</button>
-                        <button class="mesh-minimize-btn" title="Minimieren/Maximieren">−</button>
+                        <span class="mesh-minimize-wrap">
+                            <span class="mesh-chat-new-badge" aria-hidden="true"></span>
+                            <button class="mesh-minimize-btn" title="Minimieren/Maximieren">−</button>
+                        </span>
                     </div>
                 </div>
                 <div class="mesh-chat-messages initial-load">
@@ -428,6 +510,7 @@
             this.messagesContainer = this.widget.querySelector('.mesh-chat-messages');
             this.refreshBtn = this.widget.querySelector('.mesh-refresh-btn');
             this.minimizeBtn = this.widget.querySelector('.mesh-minimize-btn');
+            this.newBadgeEl = this.widget.querySelector('.mesh-chat-new-badge');
             this.lastUpdateSpan = this.widget.querySelector('.mesh-last-update');
             this.scrollToBottomBtn = this.widget.querySelector('.mesh-scroll-to-bottom');
         }
@@ -455,9 +538,33 @@
             this.isMinimized = !this.isMinimized;
             this.widget.classList.toggle('minimized', this.isMinimized);
             this.minimizeBtn.textContent = this.isMinimized ? '+' : '−';
+            this.markMessagesSeen();
+            this.updateNewBadge();
+            if (!this.isMinimized) {
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => this.scrollToBottom());
+                });
+            }
         }
 
-        async loadMessages(forceRefresh = false) {
+        markMessagesSeen() {
+            this.lastSeenIds = new Set(this.messages.map(m => m.id));
+        }
+
+        updateNewBadge() {
+            if (!this.newBadgeEl) return;
+            const count = this.messages.filter(m => !this.lastSeenIds.has(m.id)).length;
+            if (count > 0 && this.isMinimized) {
+                this.newBadgeEl.textContent = count > 99 ? '99+' : String(count);
+                this.newBadgeEl.classList.add('visible');
+                this.newBadgeEl.setAttribute('aria-label', count + ' neue Nachrichten');
+            } else {
+                this.newBadgeEl.classList.remove('visible');
+                this.newBadgeEl.removeAttribute('aria-label');
+            }
+        }
+
+        async loadMessages(forceRefresh = false, isAutoRefresh = false) {
             try {
                 // Nur bei erstem Laden oder Force-Refresh loading anzeigen
                 if (this.messages.length === 0) {
@@ -474,8 +581,8 @@
                 url.searchParams.set('portnum', '1');
                 url.searchParams.set('limit', this.maxMessages.toString());
                 
-                // Bei Updates: nur Nachrichten seit der letzten Aktualisierung abrufen
-                if (this.lastUpdateTime && !forceRefresh) {
+                // Bei Updates: nur bei inkrementellem Abruf "since" nutzen (nicht bei Auto-Refresh, damit neue Nachrichten erkannt werden)
+                if (this.lastUpdateTime && !forceRefresh && !isAutoRefresh) {
                     url.searchParams.set('since', this.lastUpdateTime);
                 }
                 
@@ -498,6 +605,13 @@
                     if (forceRefresh || this.messages.length === 0) {
                         this.messages = data.packets;
                         this.renderMessages(true);
+                        this.markMessagesSeen();
+                        this.updateNewBadge();
+                    } else if (isAutoRefresh) {
+                        // Vollständiger Abruf im Intervall: Liste ersetzen, Badge aus neuen IDs berechnen
+                        this.messages = data.packets;
+                        this.renderMessages(true);
+                        this.updateNewBadge();
                     } else {
                         const existingIds = new Set(this.messages.map(m => m.id));
                         const newMessages = data.packets.filter(packet => !existingIds.has(packet.id));
@@ -512,7 +626,6 @@
                             this.messages = this.messages.slice(0, this.maxMessages);
                             this.addNewMessages(newMessages);
                         } else {
-                            // Prüfe ob DOM leer ist
                             const domMessageCount = this.messagesContainer.querySelectorAll('.mesh-message').length;
                             if (domMessageCount === 0 && this.messages.length > 0) {
                                 this.renderMessages(false);
@@ -616,6 +729,9 @@
 
             if (wasScrolledToBottom) {
                 setTimeout(() => this.scrollToBottom(), 100);
+            }
+            if (this.isMinimized) {
+                this.updateNewBadge();
             }
         }
 
@@ -793,9 +909,7 @@
 
         startAutoRefresh() {
             setInterval(() => {
-                if (!this.isMinimized) {
-                    this.loadMessages();
-                }
+                this.loadMessages(false, true);
             }, this.refreshInterval);
 
             setInterval(() => {
